@@ -23,7 +23,10 @@ const VideoRecorder = () => {
 
   const [playVideo, setPlayVideo] = useState(false);
 
-  const player = React.createRef(null);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+
+  const player = React.useRef<Video>(null);
   console.log('loaded--', loaded);
 
   useEffect(() => {
@@ -116,36 +119,55 @@ const VideoRecorder = () => {
     setPaused(true);
   };
 
-  const onLoad = data => {
-    console.log('onLoad', data);
+  const onProgress = (data: {currentTime: number}) => {
+    setCurrentTime(data.currentTime);
   };
 
-  const onProgress = data => {
-    console.log('progress', data);
+  const onLoad = (data: {duration: number}) => {
+    setDuration(data.duration);
   };
-
   const onEnd = () => {
     console.log('finished playback');
     setPaused(true);
     setLoaded(false);
   };
 
-  const onError = error => {
+  const onError = (error: any) => {
     console.log('error', error);
   };
 
-  const playRecording = (filePath, index) => {
+  const playRecording = (filePath: any, index: number) => {
     console.log('Playing recording:', filePath);
-    setAudioFile(filePath); // Set the audio file path to play
-    setPaused(false); // Play the audio
+    setAudioFile(filePath);
+    setPaused(false);
     setPlayingIndex(index);
   };
-  const formatTime = seconds => {
+  const formatTime = (seconds: any) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
+  useEffect(() => {
+    const fetchRecordings = async () => {
+      try {
+        const directoryPath = RNFS.DownloadDirectoryPath;
+        const files = await RNFS.readdir(directoryPath);
+        const audioFiles = files.filter(file => file.endsWith('.wav'));
 
+        const audioFilePaths = audioFiles.map(item => {
+          const file = directoryPath + '/' + item;
+          return {path: file};
+        });
+        setRecordings(audioFilePaths);
+      } catch (error) {
+        console.error('Error fetching recordings:', error);
+      }
+    };
+
+    fetchRecordings();
+  }, []);
+
+  console.log('recordings list', recordings.length);
   const renderItem = ({item, index}) => (
     <View style={{marginVertical: 5, flex: 1, flexDirection: 'row', gap: 10}}>
       <Text>{item.path}</Text>
@@ -159,6 +181,13 @@ const VideoRecorder = () => {
           }
         }}
       />
+      {playingIndex === index && !paused ? (
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <Text style={styles.progressText}>
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 

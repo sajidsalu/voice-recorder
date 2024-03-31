@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Button, StyleSheet, Text, View} from 'react-native';
 import Video from 'react-native-video';
 
@@ -37,6 +37,9 @@ export default function AudioPlayer() {
     setCurrentTime(0);
     playerRef?.current?.seek(0);
   };
+  useEffect(() => {
+    setPaused(true);
+  }, []);
 
   return (
     <View style={styles.localPlayerContainer}>
